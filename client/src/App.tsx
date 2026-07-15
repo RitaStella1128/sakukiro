@@ -9,6 +9,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
 import Home from "./pages/Home";
 import HistoryPage from "./pages/History";
+import Landing from "./pages/Landing";
 
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/edit/:id"} component={Home} />
       <Route path={"/history"} component={HistoryPage} />
+      <Route path={"/lp"} component={Landing} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
