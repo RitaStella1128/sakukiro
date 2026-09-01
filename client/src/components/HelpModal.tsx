@@ -29,7 +29,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </DialogTitle>
           </div>
           <DialogClose asChild>
-            <button className={modalCloseButtonClass}>
+            <button className={modalCloseButtonClass} aria-label={t("close")}>
               <X className="w-6 h-6" strokeWidth={4} />
             </button>
           </DialogClose>
@@ -48,8 +48,8 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             
             <p className="text-base font-bold leading-relaxed text-foreground/90">
               {language === 'ja' 
-                ? '「サクキロ」は、その名の通り「サクッと支出記録」することを極限まで追求したアプリです。' 
-                : '"SAKUKIRO" is designed for one purpose: to track expenses with lightning speed.'}
+                ? '「サクキロ」は、その名の通り「サクッと支出・収入を記録」することを極限まで追求したアプリです。'
+                : '"SAKUKIRO" is designed for one purpose: to track expenses and income with lightning speed.'}
             </p>
             <p className="text-sm font-medium leading-relaxed text-muted-foreground">
               {language === 'ja'
@@ -78,19 +78,26 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <li className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center text-xs border-2 border-black dark:border-white">2</span>
                 <div>
-                  <p className="font-bold text-sm">{language === 'ja' ? '左の単位を切り替え（任意）' : 'Switch Unit (Optional)'}</p>
-                  <p className="text-xs text-muted-foreground">{language === 'ja' ? '金額表示の左にある ¥ / pt をタップすると、通常支払いとポイント支払いを切り替えられます。' : 'Tap the unit on the left side of the amount display to switch between money and pt input.'}</p>
+                  <p className="font-bold text-sm">{language === 'ja' ? '支出／収入を選択' : 'Choose Expense or Income'}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ja' ? '金額の下にあるボタンで、記録の種類を選択します。' : 'Use the buttons below the amount to choose the record type.'}</p>
                 </div>
               </li>
               <li className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center text-xs border-2 border-black dark:border-white">3</span>
+                <div>
+                  <p className="font-bold text-sm">{language === 'ja' ? '単位を切り替え（任意）' : 'Switch Unit (Optional)'}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ja' ? '金額表示の左にある ¥ / pt をタップすると、通常支払いとポイント支払いを切り替えられます。' : 'Tap the unit on the left side of the amount display to switch between money and pt input.'}</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center text-xs border-2 border-black dark:border-white">4</span>
                 <div>
                   <p className="font-bold text-sm">{language === 'ja' ? 'カテゴリを選択（任意）' : 'Select Category (Optional)'}</p>
                   <p className="text-xs text-muted-foreground">{language === 'ja' ? '必要であればカテゴリを選びます。デフォルトのままでもOK。' : 'Choose a category if needed. Default is fine too.'}</p>
                 </div>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center text-xs border-2 border-black dark:border-white">4</span>
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-black dark:bg-white text-white dark:text-black font-bold flex items-center justify-center text-xs border-2 border-black dark:border-white">5</span>
                 <div>
                   <p className="font-bold text-sm">{language === 'ja' ? '確定ボタンをタップ' : 'Tap Confirm'}</p>
                   <p className="text-xs text-muted-foreground">{language === 'ja' ? 'これだけで記録完了。すぐに次の入力ができます。' : 'Done. You are ready for the next entry instantly.'}</p>

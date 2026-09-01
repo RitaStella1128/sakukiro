@@ -20,7 +20,12 @@ export interface PWAInstallPromptHandle {
 export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
   const { language } = useLanguage();
   const [isPWA, setIsPWA] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const viewportIsMobile = window.matchMedia('(max-width: 767px)').matches;
+    const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    return viewportIsMobile || userAgentIsMobile;
+  });
   const [showBanner, setShowBanner] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -43,9 +48,13 @@ export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
                          document.referrer.includes('android-app://');
     setIsPWA(isStandalone);
 
-    // Check if mobile device
-    const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    setIsMobile(mobileCheck);
+    // Treat narrow browser windows as mobile too, so responsive testing and actual device behavior agree.
+    const mobileMediaQuery = window.matchMedia('(max-width: 767px)');
+    const userAgentIsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const updateMobileState = () => setIsMobile(mobileMediaQuery.matches || userAgentIsMobile);
+    updateMobileState();
+    mobileMediaQuery.addEventListener('change', updateMobileState);
+    const mobileCheck = mobileMediaQuery.matches || userAgentIsMobile;
 
     // Set current URL for QR code
     setCurrentUrl(window.location.href);
@@ -57,6 +66,8 @@ export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
         setShowBanner(true);
       }
     }
+
+    return () => mobileMediaQuery.removeEventListener('change', updateMobileState);
   }, []);
 
   const handleDismissBanner = () => {
@@ -69,10 +80,15 @@ export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
   // PC View: Show QR Code Overlay
   if (!isMobile && !forcePC) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-recommended-title"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      >
         <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-8 max-w-md w-full shadow-[8px_8px_0px_0px_var(--color-safety-orange)] text-center relative">
           <Smartphone className="w-12 h-12 mx-auto mb-4 text-primary" strokeWidth={2} />
-          <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">
+          <h2 id="mobile-recommended-title" className="text-2xl font-black uppercase tracking-tighter mb-2">
             {language === 'ja' ? 'スマホでの利用を推奨' : 'Mobile Recommended'}
           </h2>
           <p className="text-sm font-bold text-muted-foreground mb-6">
@@ -141,6 +157,7 @@ export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
                 <button 
                   onClick={handleDismissBanner}
                   className="p-2 hover:bg-black/10 rounded-sm transition-colors"
+                  aria-label={language === 'ja' ? 'インストール案内を閉じる' : 'Dismiss install prompt'}
                 >
                   <X className="w-5 h-5" strokeWidth={3} />
                 </button>
@@ -165,6 +182,7 @@ export const PWAInstallPrompt = forwardRef<PWAInstallPromptHandle>((_, ref) => {
             <DialogClose asChild>
               <button 
                 className={modalCloseButtonClass}
+                aria-label={language === 'ja' ? '閉じる' : 'Close'}
               >
                 <X className="w-6 h-6" strokeWidth={4} />
               </button>

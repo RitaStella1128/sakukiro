@@ -11,6 +11,23 @@ interface Translations {
 
 const translations: Translations = {
   amount: { ja: "金額", en: "AMOUNT" },
+  transactionType: { ja: "取引種別", en: "TYPE" },
+  expense: { ja: "支出", en: "EXPENSE" },
+  income: { ja: "収入", en: "INCOME" },
+  settings: { ja: "設定", en: "SETTINGS" },
+  help: { ja: "ヘルプ", en: "HELP" },
+  installApp: { ja: "アプリをインストール", en: "INSTALL APP" },
+  back: { ja: "戻る", en: "BACK" },
+  close: { ja: "閉じる", en: "CLOSE" },
+  deleteRecord: { ja: "記録を削除", en: "DELETE RECORD" },
+  clearInput: { ja: "入力をクリア", en: "CLEAR INPUT" },
+  deleteInput: { ja: "最後の数字を削除", en: "DELETE LAST DIGIT" },
+  editRecord: { ja: "記録を編集", en: "EDIT RECORD" },
+  export: { ja: "CSVをエクスポート", en: "EXPORT CSV" },
+  summary: { ja: "集計", en: "SUMMARY" },
+  recordsCount: { ja: "件", en: "RECORDS" },
+  balance: { ja: "差引", en: "BALANCE" },
+  addFirstRecord: { ja: "最初の記録を追加", en: "ADD FIRST RECORD" },
   category: { ja: "カテゴリ", en: "CATEGORY" },
   note: { ja: "備考", en: "NOTE" },
   notePlaceholder: { ja: "店名、品名など...", en: "Store, item..." },
@@ -37,6 +54,11 @@ const translations: Translations = {
   cat_clothing: { ja: "衣服", en: "Clothes" },
   cat_medical: { ja: "医療", en: "Medical" },
   cat_other: { ja: "その他", en: "Other" },
+  cat_salary: { ja: "給与", en: "Salary" },
+  cat_freelance: { ja: "副業", en: "Freelance" },
+  cat_refund: { ja: "返金", en: "Refund" },
+  cat_gift: { ja: "贈与", en: "Gift" },
+  cat_other_income: { ja: "その他", en: "Other Income" },
 };
 
 interface LanguageContextType {
