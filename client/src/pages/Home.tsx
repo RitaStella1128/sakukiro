@@ -32,7 +32,10 @@ import { HelpCircle } from "lucide-react";
 // - miller_law: 画面上の情報量を「金額」「カテゴリ」「備考」の3つに絞り、認知負荷を下げる。
 // - peak_end_rule: 入力完了時のアニメーションと触覚的なフィードバック（視覚的）を強化し、記録完了の快感を提供する。
 
-const CATEGORY_KEYS = [
+type EntryMode = "money" | "points";
+type TransactionType = "expense" | "income";
+
+const EXPENSE_CATEGORY_KEYS = [
   "cat_food",
   "cat_daily",
   "cat_transport",
@@ -41,9 +44,17 @@ const CATEGORY_KEYS = [
   "cat_medical",
   "cat_other"
 ];
+const INCOME_CATEGORY_KEYS = [
+  "cat_salary",
+  "cat_freelance",
+  "cat_refund",
+  "cat_gift",
+  "cat_other_income"
+];
 const POINTS_HINT_STORAGE_KEY = "kaimono_points_hint_seen";
 
-type EntryMode = "money" | "points";
+const getCategoryKeys = (type: TransactionType) =>
+  type === "income" ? INCOME_CATEGORY_KEYS : EXPENSE_CATEGORY_KEYS;
 
 interface ExpenseRecord {
   id: string;
@@ -53,6 +64,7 @@ interface ExpenseRecord {
   date: string;
   currency?: CurrencyCode;
   unitType?: EntryMode;
+  transactionType?: TransactionType;
 }
 
 export default function Home() {
@@ -60,7 +72,8 @@ export default function Home() {
   const { currency, getSymbol, config } = useCurrency();
   const [amount, setAmount] = useState("");
   const [entryMode, setEntryMode] = useState<EntryMode>("money");
-  const [categoryKey, setCategoryKey] = useState(CATEGORY_KEYS[0]);
+  const [transactionType, setTransactionType] = useState<TransactionType>("expense");
+  const [categoryKey, setCategoryKey] = useState(EXPENSE_CATEGORY_KEYS[0]);
   const [note, setNote] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [_, setLocation] = useLocation();
@@ -135,10 +148,17 @@ export default function Home() {
         const record = records.find((r: any) => r.id === params.id);
         if (record) {
           setAmount(record.amount.toString());
-          setCategoryKey(record.categoryKey || CATEGORY_KEYS[0]);
           setNote(record.note || "");
           setOriginalDate(record.date);
           setEntryMode(record.unitType === "points" ? "points" : "money");
+          const recordType = record.transactionType === "income" ? "income" : "expense";
+          const categoryKeys = getCategoryKeys(recordType);
+          setTransactionType(recordType);
+          setCategoryKey(
+            record.categoryKey && categoryKeys.includes(record.categoryKey)
+              ? record.categoryKey
+              : categoryKeys[0]
+          );
         } else {
           toast.error("記録が見つかりません");
           setLocation("/history");
@@ -252,6 +272,16 @@ export default function Home() {
     setEntryMode(nextMode);
   };
 
+  const handleTransactionTypeChange = (nextType: TransactionType) => {
+    setTransactionType(nextType);
+    setCategoryKey((currentCategoryKey) => {
+      const nextCategoryKeys = getCategoryKeys(nextType);
+      return nextCategoryKeys.includes(currentCategoryKey)
+        ? currentCategoryKey
+        : nextCategoryKeys[0];
+    });
+  };
+
   const handleDelete = () => {
     setAmount((prev) => prev.slice(0, -1));
   };
@@ -306,6 +336,7 @@ export default function Home() {
             // 日付は変更しない（必要なら編集可能にするが、今回は新規入力画面ベースなので維持）
             date: originalDate || r.date,
             unitType: entryMode,
+            transactionType,
           };
 
           if (entryMode === "money") {
@@ -331,6 +362,7 @@ export default function Home() {
         note,
         date: new Date().toISOString(),
         unitType: entryMode,
+        transactionType,
       };
 
       if (entryMode === "money") {
@@ -384,6 +416,7 @@ export default function Home() {
                 size="icon" 
                 onClick={() => setLocation("/history")}
                 className="absolute left-0 w-8 h-8 rounded-none border-2 border-black dark:border-white hover:bg-black/10 hover:text-destructive-foreground transition-all active:translate-y-1"
+                aria-label={t("back")}
               >
                 <ArrowLeft className="w-4 h-4" strokeWidth={3} />
               </Button>
@@ -402,7 +435,7 @@ export default function Home() {
             <button
               onClick={() => setIsHelpOpen(true)}
               className="w-10 h-10 flex items-center justify-center border-2 border-black dark:border-white bg-white dark:bg-black hover:bg-accent transition-colors  active:translate-y-[1px] active:translate-x-[1px] "
-              aria-label="Help"
+              aria-label={t("help")}
             >
               <HelpCircle className="w-4 h-4" strokeWidth={3} />
             </button>
@@ -417,7 +450,8 @@ export default function Home() {
                 size="icon"
                 onClick={() => pwaPromptRef.current?.openModal()}
                 className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-y-1"
-                title="Install App"
+                aria-label={t("installApp")}
+                title={t("installApp")}
               >
                 <Smartphone className="w-6 h-6" strokeWidth={2.5} />
               </Button>
@@ -428,6 +462,7 @@ export default function Home() {
               size="icon" 
               onClick={() => setLocation("/history")}
               className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-y-1"
+              aria-label={t("history")}
             >
               <History className="w-6 h-6" strokeWidth={2.5} />
             </Button>
@@ -440,15 +475,16 @@ export default function Home() {
             size="icon" 
             onClick={() => setShowDeleteConfirm(true)}
             className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-black/10 hover:text-destructive-foreground transition-all active:translate-y-1 text-destructive-foreground"
+            aria-label={t("deleteRecord")}
           >
             <Trash2 className="w-5 h-5" strokeWidth={2.5} />
           </Button>
         )}
       </header>
 
-      <main className="flex-1 flex flex-col w-full max-w-md mx-auto relative">
+      <main className="flex-1 flex flex-col w-full max-w-md mx-auto relative lg:max-w-6xl lg:flex-row lg:gap-6 lg:p-6">
         {/* Upper Section: Display & Inputs */}
-        <div className="flex flex-col px-4 pt-4 pb-2 gap-4 shrink-0">
+        <div className="flex flex-col px-4 pt-4 pb-2 gap-4 shrink-0 lg:w-[min(28rem,38%)] lg:justify-center lg:px-0 lg:py-0">
           {/* Amount Display - The Hero */}
           <div className="relative group">
             <div className="absolute top-2 left-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground pointer-events-none">
@@ -494,6 +530,7 @@ export default function Home() {
                   <button 
                     onClick={handleClear}
                     className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/20"
+                    aria-label={t("clearInput")}
                   >
                     <X className="w-6 h-6" strokeWidth={3} />
                   </button>
@@ -530,19 +567,46 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
+          {/* Transaction Type */}
+          <div className="grid grid-cols-2 gap-2" aria-label={t("transactionType")}>
+            <button
+              type="button"
+              aria-pressed={transactionType === "expense"}
+              onClick={() => handleTransactionTypeChange("expense")}
+              className={`h-10 border-2 border-black dark:border-white font-black text-sm transition-colors active:translate-y-[1px] ${
+                transactionType === "expense"
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "bg-white text-foreground hover:bg-accent dark:bg-black"
+              }`}
+            >
+              − {t("expense")}
+            </button>
+            <button
+              type="button"
+              aria-pressed={transactionType === "income"}
+              onClick={() => handleTransactionTypeChange("income")}
+              className={`h-10 border-2 border-black dark:border-white font-black text-sm transition-colors active:translate-y-[1px] ${
+                transactionType === "income"
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-foreground hover:bg-accent dark:bg-black"
+              }`}
+            >
+              ＋ {t("income")}
+            </button>
+          </div>
+
           {/* Secondary Inputs - Compact Row */}
           <div className="grid grid-cols-[1.2fr_1.8fr] gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-black uppercase tracking-widest pl-1">{t("category")}</label>
               <Select value={categoryKey} onValueChange={setCategoryKey}>
                 <SelectTrigger 
-                  className="w-full text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus:ring-0  transition-all bg-white dark:bg-black box-border"
-                  style={{ height: '56px' }}
+                  className="w-full h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus:ring-0  transition-all bg-white dark:bg-black box-border"
                 >
                   <SelectValue placeholder={t("category")} />
                 </SelectTrigger>
                 <SelectContent className="border-2 border-black dark:border-white  max-h-[40vh]">
-                  {CATEGORY_KEYS.map((key) => (
+                  {getCategoryKeys(transactionType).map((key) => (
                     <SelectItem key={key} value={key} className="font-bold py-3 cursor-pointer focus:bg-accent focus:text-accent-foreground">
                       {t(key)}
                     </SelectItem>
@@ -558,15 +622,14 @@ export default function Home() {
                 onKeyDown={handleNoteKeyDown}
                 placeholder={t("notePlaceholder")}
                 enterKeyHint="done"
-                className="w-full text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus-visible:ring-0  transition-all bg-white dark:bg-black box-border"
-                style={{ height: '56px' }}
+                className="w-full h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus-visible:ring-0  transition-all bg-white dark:bg-black box-border"
               />
             </div>
           </div>
         </div>
 
         {/* Keypad Area - Maximized for Fitts's Law */}
-        <div className="flex-1 grid grid-cols-4 gap-0 p-0 mt-2 border-t-2 border-black dark:border-white bg-white dark:bg-black">
+        <div className="flex-1 grid grid-cols-4 gap-0 p-0 mt-2 border-t-2 border-black dark:border-white bg-white dark:bg-black min-h-0 lg:mt-0 lg:border-t-0 lg:border-l-2">
           {/* Main Numbers 1-9 */}
           <div className="col-span-3 grid grid-cols-3 grid-rows-4">
             {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((num) => (
@@ -608,6 +671,7 @@ export default function Home() {
             <button
               onClick={handleDelete}
               className="h-full w-full border-b-2 border-black dark:border-white bg-muted/30 active:bg-destructive active:text-destructive-foreground transition-colors flex items-center justify-center"
+              aria-label={t("deleteInput")}
             >
               <Delete className="w-8 h-8" strokeWidth={2.5} />
             </button>

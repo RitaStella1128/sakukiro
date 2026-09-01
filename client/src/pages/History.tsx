@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { ArrowLeft, Trash2, Download, Edit2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Trash2, Download, Edit2, ShoppingBag, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,6 +23,7 @@ interface Record {
   date: string;
   currency?: CurrencyCode;
   unitType?: "money" | "points";
+  transactionType?: "expense" | "income";
 }
 
 const getRecordUnitType = (record: Record) =>
@@ -31,12 +32,28 @@ const getRecordUnitType = (record: Record) =>
 const getRecordUnitCode = (record: Record) =>
   getRecordUnitType(record) === "points" ? "pt" : record.currency || "JPY";
 
-function formatRecordAmount(record: Record, availableCurrencies: any) {
-  if (getRecordUnitType(record) === "points") {
-    return `${record.amount.toLocaleString()} pt`;
+const getRecordTransactionType = (record: Record) =>
+  record.transactionType === "income" ? "income" : "expense";
+
+type SummaryBucket = {
+  key: string;
+  unitType: "money" | "points";
+  currency?: CurrencyCode;
+  income: number;
+  expense: number;
+};
+
+function formatUnitAmount(
+  amount: number,
+  unitType: "money" | "points",
+  currency: CurrencyCode | undefined,
+  availableCurrencies: any,
+) {
+  if (unitType === "points") {
+    return `${amount.toLocaleString()} pt`;
   }
 
-  const currencyCode = record.currency || "JPY";
+  const currencyCode = currency || "JPY";
   const currencyConfig = availableCurrencies[currencyCode] || availableCurrencies["JPY"];
 
   return new Intl.NumberFormat(undefined, {
@@ -44,7 +61,37 @@ function formatRecordAmount(record: Record, availableCurrencies: any) {
     currency: currencyCode,
     minimumFractionDigits: currencyConfig.decimals,
     maximumFractionDigits: currencyConfig.decimals,
+  }).format(amount);
+}
+
+function formatSignedUnitAmount(
+  amount: number,
+  unitType: "money" | "points",
+  currency: CurrencyCode | undefined,
+  availableCurrencies: any,
+) {
+  const sign = amount > 0 ? "+" : amount < 0 ? "−" : "";
+  return `${sign}${formatUnitAmount(Math.abs(amount), unitType, currency, availableCurrencies)}`;
+}
+
+function formatRecordAmount(record: Record, availableCurrencies: any) {
+  const sign = getRecordTransactionType(record) === "income" ? "+" : "−";
+
+  if (getRecordUnitType(record) === "points") {
+    return `${sign}${record.amount.toLocaleString()} pt`;
+  }
+
+  const currencyCode = record.currency || "JPY";
+  const currencyConfig = availableCurrencies[currencyCode] || availableCurrencies["JPY"];
+
+  const formattedAmount = new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: currencyConfig.decimals,
+    maximumFractionDigits: currencyConfig.decimals,
   }).format(record.amount);
+
+  return `${sign}${formattedAmount}`;
 }
 
 // Swipeable Item Component with Advanced Physics
@@ -138,12 +185,28 @@ function HistoryItem({
         whileDrag={{ scale: 1.02, cursor: "grabbing" }}
         whileTap={{ scale: 0.98 }}
         onClick={() => onEdit(record.id)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onEdit(record.id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${t("editRecord")}: ${formatRecordAmount(record, availableCurrencies)}`}
         className="relative neo-border bg-white dark:bg-black p-4 flex justify-between items-center touch-pan-y cursor-pointer select-none"
       >
         <div className="flex flex-col gap-1 overflow-hidden pointer-events-none">
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black tracking-tighter">
               {formatRecordAmount(record, availableCurrencies)}
+            </span>
+            <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 border border-black dark:border-white ${
+              getRecordTransactionType(record) === "income"
+                ? "bg-green-600 text-white"
+                : "bg-black text-white dark:bg-white dark:text-black"
+            }`}>
+              {t(getRecordTransactionType(record))}
             </span>
             <span className="text-[10px] font-black uppercase bg-primary text-primary-foreground px-1.5 py-0.5 border border-black dark:border-white">
               {record.categoryKey ? t(record.categoryKey) : record.category}
@@ -177,6 +240,34 @@ export default function HistoryPage() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [_, setLocation] = useLocation();
+
+  const summaries = useMemo<SummaryBucket[]>(() => {
+    const summaryMap = new Map<string, SummaryBucket>();
+
+    records.forEach((record) => {
+      const unitType = getRecordUnitType(record);
+      const currency = unitType === "money" ? record.currency || "JPY" : undefined;
+      const unitCode = unitType === "points" ? "pt" : currency;
+      const key = `${unitType}:${unitCode}`;
+      const current = summaryMap.get(key) || {
+        key,
+        unitType,
+        currency,
+        income: 0,
+        expense: 0,
+      };
+
+      if (getRecordTransactionType(record) === "income") {
+        current.income += record.amount;
+      } else {
+        current.expense += record.amount;
+      }
+
+      summaryMap.set(key, current);
+    });
+
+    return Array.from(summaryMap.values());
+  }, [records]);
 
   useEffect(() => {
     const storedData = localStorage.getItem("kaimono_records");
@@ -215,7 +306,7 @@ export default function HistoryPage() {
   };
 
   const handleExportConfirm = () => {
-    const headers = ["Date", "Amount", "Unit Type", "Unit", "Category", "Note"];
+    const headers = ["Date", "Amount", "Transaction Type", "Unit Type", "Unit", "Category", "Note"];
     const rows = records.map(record => {
       const date = new Date(record.date).toLocaleString();
       const category = record.categoryKey ? t(record.categoryKey) : record.category;
@@ -226,6 +317,7 @@ export default function HistoryPage() {
       return [
         date,
         record.amount,
+        getRecordTransactionType(record),
         unitType,
         unitCode,
         category,
@@ -264,6 +356,7 @@ export default function HistoryPage() {
           size="icon" 
           onClick={() => setLocation("/")}
           className="mr-2 w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-x-[-2px]"
+          aria-label={t("back")}
         >
           <ArrowLeft className="w-6 h-6" strokeWidth={2.5} />
         </Button>
@@ -274,7 +367,8 @@ export default function HistoryPage() {
             size="icon" 
             onClick={handleExportClick}
             className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-y-1"
-            title="Export CSV"
+            aria-label={t("export")}
+            title={t("export")}
           >
             <Download className="w-6 h-6" strokeWidth={2.5} />
           </Button>
@@ -288,6 +382,52 @@ export default function HistoryPage() {
       />
 
       <main className="flex-1 max-w-md mx-auto w-full p-4 overflow-x-hidden relative">
+        {records.length > 0 && (
+          <section aria-labelledby="history-summary-title" className="mb-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 id="history-summary-title" className="text-xs font-black uppercase tracking-widest">
+                {t("summary")}
+              </h2>
+              <span className="text-[10px] font-bold text-muted-foreground">
+                {records.length} {t("recordsCount")}
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {summaries.map((summary) => {
+                const balance = summary.income - summary.expense;
+                const unitLabel = summary.unitType === "points" ? t("points") : summary.currency;
+
+                return (
+                  <div key={summary.key} className="neo-border bg-white dark:bg-black p-3">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-sm font-black uppercase">{unitLabel}</span>
+                      <span className="text-xs font-bold">
+                        {t("balance")}: <strong className={balance >= 0 ? "text-green-600" : "text-destructive"}>
+                          {formatSignedUnitAmount(balance, summary.unitType, summary.currency, availableCurrencies)}
+                        </strong>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                      <div className="border-2 border-green-600/40 p-2">
+                        <span className="text-muted-foreground">{t("income")}</span>
+                        <span className="block text-sm text-green-600">
+                          +{formatUnitAmount(summary.income, summary.unitType, summary.currency, availableCurrencies)}
+                        </span>
+                      </div>
+                      <div className="border-2 border-destructive/40 p-2">
+                        <span className="text-muted-foreground">{t("expense")}</span>
+                        <span className="block text-sm text-destructive">
+                          −{formatUnitAmount(summary.expense, summary.unitType, summary.currency, availableCurrencies)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Tutorial Overlay */}
         <AnimatePresence>
           {showTutorial && records.length > 0 && (
@@ -319,6 +459,13 @@ export default function HistoryPage() {
             >
               <ShoppingBag className="w-12 h-12 mb-4 opacity-20" />
               <p className="font-bold">{t("noRecords")}</p>
+              <Button
+                onClick={() => setLocation("/")}
+                className="mt-4 rounded-none border-2 border-black dark:border-white font-black"
+              >
+                <Plus className="w-4 h-4" strokeWidth={3} />
+                {t("addFirstRecord")}
+              </Button>
             </motion.div>
           ) : (
             records.map((record, index) => (

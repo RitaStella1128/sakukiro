@@ -14,7 +14,7 @@ export function SettingsModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-x-[-2px]">
+        <Button variant="ghost" size="icon" aria-label={t("settings")} className="w-10 h-10 rounded-none border-2 border-black dark:border-white hover:bg-accent hover:text-accent-foreground transition-all active:translate-x-[-2px]">
           <Settings className="w-6 h-6" strokeWidth={2.5} />
         </Button>
       </DialogTrigger>
@@ -24,11 +24,12 @@ export function SettingsModal() {
             <div className={modalIconBoxClass}>
               <Settings className="w-6 h-6 text-primary-foreground" strokeWidth={3} />
             </div>
-            <DialogTitle className={modalTitleClass}>Settings</DialogTitle>
+            <DialogTitle className={modalTitleClass}>{t("settings")}</DialogTitle>
           </div>
           <DialogClose asChild>
             <button 
               className={modalCloseButtonClass}
+              aria-label={t("close")}
             >
               <X className="w-6 h-6" strokeWidth={4} />
             </button>
