@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation, useRoute } from "wouter";
-import { History, Delete, Check, X, ArrowLeft, Trash2 } from "lucide-react";
+import { History, Delete, Check, X, ArrowLeft, Trash2, Minus, Plus, CircleDollarSign, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -69,7 +69,7 @@ interface ExpenseRecord {
 
 export default function Home() {
   const { t } = useLanguage();
-  const { currency, getSymbol, config } = useCurrency();
+  const { currency, config } = useCurrency();
   const [amount, setAmount] = useState("");
   const [entryMode, setEntryMode] = useState<EntryMode>("money");
   const [transactionType, setTransactionType] = useState<TransactionType>("expense");
@@ -98,9 +98,9 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState(72);
   const activeDecimals = entryMode === "points" ? 0 : config.decimals;
-  const unitSymbol = entryMode === "points" ? "pt" : getSymbol();
   const unitLabel = entryMode === "points" ? t("points") : t("money");
   const unitSubLabel = entryMode === "points" ? t("points") : config.code;
+  const UnitIcon = entryMode === "points" ? Coins : CircleDollarSign;
   
   // 表示用のフォーマット済みテキストを計算
   const displayText = amount ? (() => {
@@ -506,7 +506,7 @@ export default function Home() {
                 <span
                   className={`font-bold leading-none ${entryMode === "points" ? "text-2xl uppercase" : "text-3xl"}`}
                 >
-                  {unitSymbol}
+                  <UnitIcon className="w-7 h-7" strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 <span className="mt-0.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50">
                   {unitSubLabel}
@@ -579,7 +579,10 @@ export default function Home() {
                   : "bg-white text-foreground hover:bg-accent dark:bg-black"
               }`}
             >
-              − {t("expense")}
+              <span className="inline-flex items-center justify-center gap-2">
+                <Minus className="w-4 h-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+                {t("expense")}
+              </span>
             </button>
             <button
               type="button"
@@ -591,7 +594,10 @@ export default function Home() {
                   : "bg-white text-foreground hover:bg-accent dark:bg-black"
               }`}
             >
-              ＋ {t("income")}
+              <span className="inline-flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+                {t("income")}
+              </span>
             </button>
           </div>
 
@@ -601,7 +607,8 @@ export default function Home() {
               <label className="text-xs font-black uppercase tracking-widest pl-1">{t("category")}</label>
               <Select value={categoryKey} onValueChange={setCategoryKey}>
                 <SelectTrigger 
-                  className="w-full h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus:ring-0  transition-all bg-white dark:bg-black box-border"
+                  className="w-full h-12 min-h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus:ring-0  transition-all bg-white dark:bg-black box-border"
+                  style={{ height: "48px", minHeight: "48px" }}
                 >
                   <SelectValue placeholder={t("category")} />
                 </SelectTrigger>
@@ -622,7 +629,8 @@ export default function Home() {
                 onKeyDown={handleNoteKeyDown}
                 placeholder={t("notePlaceholder")}
                 enterKeyHint="done"
-                className="w-full h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus-visible:ring-0  transition-all bg-white dark:bg-black box-border"
+                className="w-full h-12 min-h-12 text-base font-bold px-3 py-0 border-2 border-black dark:border-white rounded-none shadow-none focus-visible:ring-0  transition-all bg-white dark:bg-black box-border"
+                style={{ height: "48px", minHeight: "48px" }}
               />
             </div>
           </div>

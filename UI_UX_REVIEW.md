@@ -35,6 +35,14 @@
 - [改善後ホーム（390×844）](ui-improved-mobile-home.png)
 - [改善後ホーム（1280×800）](ui-improved-desktop-home.png)
 - [改善後履歴空状態（390×844）](ui-improved-history-empty.png)
+- [アイコン・高さ確認（390×844）](ui-icons-height-mobile.png)
+- [ポイント単位アイコン（390×844）](ui-icons-points-mobile.png)
+
+## 追加表示確認
+
+- カテゴリと備考の入力欄をともに48pxへ固定し、同じ高さで表示されることを確認
+- 支出／収入は文字記号ではなく、同じサイズのMinus／Plusアイコンで表示
+- 通貨／ポイントは同じサイズのCircleDollarSign／Coinsアイコンで表示し、通貨コード・単位名は下段に残す
 
 ## 継続検討事項
 

@@ -17,9 +17,28 @@
 - PWA対応（ホーム画面追加、更新通知）
 - データは端末内（`localStorage`）保存のみ
 
-## デモ
+## 公開URL
 
-- Web: `https://sakukiro.vercel.app/`
+- アプリ本体（移行先）: `https://sakukiro.ritastella.com/`
+- LP（移行先）: `https://sakukiro.ritastella.com/lp`
+- 旧URL（Vercel）: `https://sakukiro.vercel.app/`
+
+移行の実施状況とDNS・Cloudflare Pagesの設定手順は [`MIGRATION_GUIDE.md`](MIGRATION_GUIDE.md) を参照してください。
+
+## Cloudflare Pages設定
+
+このリポジトリは、アプリ本体とLPを1つのReact/Vite SPAとして配信します。Cloudflare PagesのGit連携では次の値を使用します。
+
+| 項目 | 値 |
+| --- | --- |
+| Root directory | `/` |
+| Production branch | `main`（検証中は`dev`をPreviewで使用） |
+| Build command | `pnpm build` |
+| Build output directory | `dist/public` |
+| `NODE_VERSION` | `20` |
+| `PNPM_VERSION` | `10.4.1` |
+
+`/`がアプリ本体、`/lp`がLPです。`404.html`を配置していないため、Cloudflare PagesのSPAフォールバックでこれらのルートを処理できます。
 
 ## 技術スタック
 
@@ -33,7 +52,7 @@
 ## アーキテクチャ
 
 - `client/`  
-  UIとアプリロジック本体。記録データは`localStorage`に保存。
+  UIとアプリロジック本体。`src/pages/Home.tsx`がアプリ本体、`src/pages/Landing.tsx`がLP。記録データは`localStorage`に保存。
 - `server/`  
   APIサーバーというより配信用エントリ。現状は外部公開APIなし。
 - `android/` `ios/`  
